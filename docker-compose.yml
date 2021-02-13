@@ -1,0 +1,70 @@
+version: "3.3"
+services:
+  snipe-it:
+    # Fix snipe it error mysql connection method, v5.1.1 bug issue https://github.com/snipe/snipe-it/issues/9115
+    # https://stackoverflow.com/questions/52364415/php-with-mysql-8-0-error-the-server-requested-authentication-method-unknown-to
+    # Fix duplicate column name
+    # https://github.com/snipe/snipe-it/issues/1451#issuecomment-162855083
+    # snipeit config sub directories
+    # https://snipe-it.readme.io/docs/subdirectories
+    # Proxy reserve host
+    # https://www.ctrl.blog/entry/how-to-httpd-reverseproxy-hostheader.html
+    depends_on:
+      - "mysql"
+    image: snipe/snipe-it:v5.1.1
+    env_file:
+      - ".snipeit-env"
+    ports:
+      - "4001:80"
+    volumes: 
+      - "./snipeit-data:/var/lib/snipeit"
+      # custom php ini
+      - "./php.ini:/etc/php/7.2/apache2/php.ini"
+
+      #If use subdirectories, uncomment these two line and change the alias in this file 
+      - "./snipeit-httpd/:/etc/apache2/sites-enabled/"
+      - "./snipeit.htaccess:/var/www/html/public/.htaccess"
+    deploy:
+      resources:
+          limits:
+            cpus: "2"
+            memory: "512M"
+          reservations:
+            cpus: "0.25"
+            memory: "128M"
+    logging:
+      options:
+        max-size: "1024m"
+        max-file: "7"
+
+  mysql:
+    image: mysql:8.0.23
+    restart: "always"
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - "MYSQL_ROOT_PASSWORD="
+      - "MYSQL_DATABASE=snipeit"
+      - "MYSQL_USER=snipeit"
+      - "MYSQL_PASSWORD="
+    volumes:
+      - "./mysql-data:/var/lib/mysql"
+    deploy:
+      resources:
+          limits:
+            cpus: "2"
+            memory: "1024M"
+          reservations:
+            cpus: "0.25"
+            memory: "1024M"
+    logging:
+      options:
+        max-size: "1024m"
+        max-file: "7"
+
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin:5.0
+  #   restart: "always"
+  #   ports:
+  #     - "8111:80"
+  #   environment:
+  #     - "PMA_HOST=mysql"

@@ -1,0 +1,1 @@
+docker-compose logs -t --tail="50" -f
